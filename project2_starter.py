@@ -215,7 +215,21 @@ def output_csv(data, filename) -> None:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    # we now sort the last element in each tuple in descending order
+    sorted_data = sorted(data, key=lambda x: x[-1], reverse=True)
+
+    # we then open the file in write mode 
+    with open(filename, 'w', newline='') as csvfile:
+        #we then create a CSV writer object which takes the file object and rreturns a writer that can write CSV rows
+        writer = csv.writer(csvfile)
+        
+        # write headers
+        writer.writerow(["Listing Title", "Listing ID", "Policy Number",
+                         "Host Type", "Host Name", "Room Type", "Location Rating"])
+
+        # write each row
+        for row in sorted_data:
+            writer.writerow(row)
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
