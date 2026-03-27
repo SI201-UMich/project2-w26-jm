@@ -1,7 +1,7 @@
 # SI 201 HW4 (Library Checkout System)
-# Your name:
+# Your name:James Mancilla
 # Your student id:
-# Your email:
+# Your email:jameman@umich.edu
 # Who or what you worked with on this homework (including generative AI like ChatGPT):
 # If you worked with generative AI also add a statement for how you used it.
 # e.g.:
@@ -41,7 +41,36 @@ def load_listing_results(html_path) -> list[tuple]:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    listings = []
+
+    # open the file html_path in read mode and assigns it to file
+    #html content then reads the entire contents of the html file into a string varibale
+    with open(html_path, 'r') as file:
+        html_content = file.read()
+#create a soup onject to parse the html contwnt
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # we are now looping through all div tages that have the class we are lookign for
+    #we then use finall to reurn a loist of all matching elements
+    #each matching element is called a card to resprest one listing card
+    for card in soup.find_all('div', class_='t1jojoys dir dir-ltr'):  # class from search results
+        a_tag = card.find('a', href=True)
+        #a tage checks if an anchro tag was found in which it gets the value of the href attricute 
+        #we then check if the URL contains /rooms/ and estract listing ids 
+        if a_tag:
+            link = a_tag['href']
+            if "/rooms/" in link:
+                # get the listing id from the URL we using [1] to take the second part and .split(?) to splt at ? to remove query parameters [0] then gets the first
+                listing_id = link.split("/rooms/")[1].split("?")[0]
+                # get the title from the card inse the anchrotag
+                title = a_tag.get_text().strip()
+                if title != "":
+                    listings.append((title, listing_id))
+
+    return listings
+
+
+    
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -66,14 +95,62 @@ def get_listing_details(listing_id) -> dict:
             }
         }
     """
-    # TODO: Implement checkout logic following the instructions
-    # ==============================
-    # YOUR CODE STARTS HERE
-    # ==============================
-    pass
-    # ==============================
-    # YOUR CODE ENDS HERE
-    # ==============================
+    #create the filename  and open it in read mode and then read the entre HTML content into a string 
+    filename = f"html_files/listing_{listing_id}.html"
+    with open(filename, 'r') as file:
+        html = file.read()
+    #we then create our beautiful soup object to parse HTML
+    soup = BeautifulSoup(html, 'html.parser')
+    # we rhewn set the degault policy number to pendingwhich will be updated if found
+    policy = "Pending"  # default
+    host_section = soup.find('div', class_='f19phm7j dir dir-ltr')  # container for host info
+    if host_section:
+        lis = host_section.find_all('li') #wwe first check if the host sectionw as found then we final all li which stands for list items within the host section
+        for li in lis: #once we habe them all our goal is then to looop through each item and get the content of the list item and remove whitespace If found, sets policy to that text and breaks out of the loop (stops searching)
+            text = li.get_text().strip()
+            if "STR" in text or text.lower() == "exempt":
+                policy = text
+                break
+
+    # host typle then sets the default to regular and id the host section exitss and contains the word superhost in the text we change it
+    host_type = "regular"
+    if host_section and "Superhost" in host_section.get_text():
+        host_type = "Superhost"
+
+    # we then go through and find h2 heading tag within the host section to get a name
+    host_name_tag = host_section.find('h2')
+    host_name = host_name_tag.get_text().strip() if host_name_tag else "Unknown"
+
+    # we then find all h2 rags with the class below and get the subtitle text or empty string if not found
+    subtitle_tag = soup.find('h2', class_='i1j2t6l2')  # the listing subtitle
+    subtitle = subtitle_tag.get_text().strip() if subtitle_tag else ""
+    if "Private" in subtitle:
+        room_type = "Private Room" #we then try and determine the room type
+    elif "Shared" in subtitle:
+        room_type = "Shared Room"
+    else:
+        room_type = "Entire Room"
+
+    #Sets default location rating to 0.0 Finds the first <span> with class below then check if the rating tage was found and convert it to a float and make sure that worked
+    loc_rating = 0.0
+    rating_tag = soup.find('span', class_='r1dxllyb dir dir-ltr')
+    if rating_tag:
+        try:
+            loc_rating = float(rating_tag.get_text().strip())
+        except:
+            loc_rating = 0.0
+
+    # final nested dict with all information
+    return {
+        listing_id: {
+            "policy_number": policy,
+            "host_type": host_type,
+            "host_name": host_name,
+            "room_type": room_type,
+            "location_rating": loc_rating
+        }
+    }
+    
 
 
 def create_listing_database(html_path) -> list[tuple]:
@@ -91,7 +168,31 @@ def create_listing_database(html_path) -> list[tuple]:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    database = []
+
+    # get all the titles and ids from the search results
+    listings = load_listing_results(html_path)
+
+    # loop through each listing
+    for title, listing_id in listings:
+        # get the details dictionary for this listing
+        details = get_listing_details(listing_id)[listing_id]  # nested dict
+
+        # create a tuple with all the info in order
+        listing_tuple = (
+            title,
+            listing_id,
+            details["policy_number"],
+            details["host_type"],
+            details["host_name"],
+            details["room_type"],
+            details["location_rating"]
+        )
+
+        # add it to the database
+        database.append(listing_tuple)
+
+    return database
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
