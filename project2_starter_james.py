@@ -114,7 +114,7 @@ def get_listing_details(listing_id) -> dict:
                 policy = "Exempt"
             elif "pending" in text:
                 policy = "Pending"
-            elif "STR" in text:
+            else:
                 policy = text
 
 
@@ -133,7 +133,7 @@ def get_listing_details(listing_id) -> dict:
     if name_div:
         host_name = name_div.get_text().strip().replace("Hosted by ", "")
     
-    subtitle_tag = soup.find('h2', class_='i1j2t6l2')  # Listing subtitle
+    subtitle_tag = soup.find('div', class_='_tqmy57')  # Listing subtitle
     subtitle = subtitle_tag.get_text().strip() if subtitle_tag else ""
     
     if "Private" in subtitle:
@@ -147,12 +147,11 @@ def get_listing_details(listing_id) -> dict:
     loc_rating = 0.0  # default
 
     spans = soup.find_all('span', class_='_4oybiu')
-
     try:
 
         locationspan = spans[3]
         text = locationspan.get_text().strip()
-
+        
         value = float(text)
 
         loc_rating = value
@@ -317,24 +316,19 @@ def validate_policy_numbers(data) -> list[str]:
     # YOUR CODE STARTS HERE
     # ==============================
     invalid_listings = []
-    # we create two regex patterns to check our data
-    pattern1 = re.compile(r"20\d{2}-00\d{4}STR")  # 20##-00####STR
-    pattern2 = re.compile(r"STR-000\d{4}")        # STR-000####
-#we list through each listing tuple in our data and extract the listing id and the policy number
+
+    pattern1 = re.compile(r"20\d{2}-00\d{4}STR")
+    pattern2 = re.compile(r"STR-000\d{4}")
+
     for listing in data:
         listing_id = listing[1]
-        policy = listing[2]    
-        # Ignore "Pending" and "Exempt" by skipping over to the next one
+        policy = listing[2]
+       
         if policy in ["Pending", "Exempt"]:
             continue
-        # Check if policy matches either valid format
+      
         if not (pattern1.fullmatch(policy) or pattern2.fullmatch(policy)):
-            if listing_id =="":
-                break
-
-            
-    invalid_listings.append(listing_id)
-
+            invalid_listings.append(listing_id)
 
     return invalid_listings
     # ==============================
@@ -426,7 +420,7 @@ class TestCases(unittest.TestCase):
         self.assertEqual(details_list[0]["policy_number"], "STR-0005349",
                         "Listing 467507 should have policy number 'STR-0005349'.")
         self.assertEqual(details_list[0]['policy_number'], 'STR-0005349', 'Liting 0005349 is STR-0005349')
-        print('dandjwkl')
+        
         # Spot-check 2: Listing 1944564 has host type 'Superhost' and room type 'Entire Room'
         index_1944564 = html_list.index("1944564")
         self.assertEqual(details_list[index_1944564]["host_type"], "Superhost",
@@ -437,9 +431,9 @@ class TestCases(unittest.TestCase):
         # Spot-check 3: Listing 1944564 has location rating 4.9
         self.assertEqual(details_list[index_1944564]["location_rating"], 4.9,
                         "Listing 1944564 should have location rating 4.9.")
-        print('hi')
-        print(details_list[0])
-        print('Hello')     
+        
+       
+           
 
     def test_create_listing_database(self):
         

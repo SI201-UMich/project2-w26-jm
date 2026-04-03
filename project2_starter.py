@@ -103,39 +103,37 @@ def get_listing_details(listing_id) -> dict:
     soup = BeautifulSoup(html, 'html.parser')
     
     policy = "Pending"  # Default if not found
-    host_section = soup.find('div', class_='f19phm7j dir dir-ltr')  # Host info container
+    host_section = soup.find('li', class_='f19phm7j dir dir-ltr')  # Host info container
     
     if host_section:
-        lis = host_section.find_all('li', class_ = 'f19phm7j dir dir-ltr')
-        for li in lis:
-            span = li.find('span', class_='114r2nl dir dir-ltr')  # The span containing policy/license info
-            if span:
-                text = span.get_text().strip().replace("\ufeff", "")  # Clean whitespace/unicode
-                # Categorize into Pending, Exempt, or license number
-                if "exempt" in text.lower():
-                    policy = "Exempt"
-                    break
-                elif "pending" in text.lower():
-                    policy = "Pending"
-                    break
-                elif "STR" in text:
-                    policy = text
-                    break
+        span = host_section.find("span", class_="ll4r2nl dir dir-ltr")  # The span containing policy/license info
+        if span:
+            text = span.get_text().strip().replace("\ufeff", "")  # Clean whitespace/unicode
+            # Categorize into Pending, Exempt, or license number
+            if "exempt" in text:
+                policy = "Exempt"
+            elif "pending" in text:
+                policy = "Pending"
+            else:
+                policy = text
 
+
+    # class_ to use is = _1mhorg9
+    # soup.find("span", class_="_1mhorg9")
     host_type = "regular"  # default
-    if host_section and "Superhost" in host_section.get_text():
+    if soup.find("span", class_="_1mhorg9"):
         host_type = "Superhost"
-
+    
+    #class to use it _tqmy57
     host_name = "Unknown"  # default
-    if host_section:
-        host_tags = host_section.find_all('div' , class_ = 'tehcqxo dir dir-ltr') 
-        name_div =host_tags.find('h2', class_='hnwb2pb dir dir-ltr') # Could be multiple hosts
-        if name_div:
-            names = [tag.get_text().strip() for tag in host_tags]
-            host_name = " And ".join(names)  # Combine multiple hosts
-            
- 
-    subtitle_tag = soup.find('h2', class_='i1j2t6l2')  # Listing subtitle
+
+    host_tags = soup.find('div' , class_ = 'tehcqxo dir dir-ltr') 
+    name_div = host_tags.find('h2') if host_tags else None
+
+    if name_div:
+        host_name = name_div.get_text().strip().replace("Hosted by ", "")
+    
+    subtitle_tag = soup.find('div', class_='_tqmy57')  # Listing subtitle
     subtitle = subtitle_tag.get_text().strip() if subtitle_tag else ""
     
     if "Private" in subtitle:
@@ -145,15 +143,23 @@ def get_listing_details(listing_id) -> dict:
     else:
         room_type = "Entire Room"
 
-  
+   #class to use is _4oybiu
     loc_rating = 0.0  # default
-    rating_tag = soup.find('span', class_='r1dxllyb dir dir-ltr')
-    if rating_tag:
-        try:
-            loc_rating = float(rating_tag.get_text().strip())
-        except:
-            loc_rating = 0.0
 
+    spans = soup.find_all('span', class_='_4oybiu')
+    try:
+
+        locationspan = spans[3]
+        text = locationspan.get_text().strip()
+        
+        value = float(text)
+
+        loc_rating = value
+    except:
+        loc_rating =0
+            
+    
+      
 
     return {
         listing_id: {
@@ -164,8 +170,6 @@ def get_listing_details(listing_id) -> dict:
             "location_rating": loc_rating
         }
     }
-
-
 
 
 def create_listing_database(html_path) -> list[tuple]:
@@ -312,24 +316,19 @@ def validate_policy_numbers(data) -> list[str]:
     # YOUR CODE STARTS HERE
     # ==============================
     invalid_listings = []
-    # we create two regex patterns to check our data
-    pattern1 = re.compile(r"20\d{2}-00\d{4}STR")  # 20##-00####STR
-    pattern2 = re.compile(r"STR-000\d{4}")        # STR-000####
-#we list through each listing tuple in our data and extract the listing id and the policy number
+
+    pattern1 = re.compile(r"20\d{2}-00\d{4}STR")
+    pattern2 = re.compile(r"STR-000\d{4}")
+
     for listing in data:
         listing_id = listing[1]
-        policy = listing[2]    
-        # Ignore "Pending" and "Exempt" by skipping over to the next one
+        policy = listing[2]
+       
         if policy in ["Pending", "Exempt"]:
             continue
-        # Check if policy matches either valid format
+      
         if not (pattern1.fullmatch(policy) or pattern2.fullmatch(policy)):
-            if listing_id =="":
-                break
-
-            
-    invalid_listings.append(listing_id)
-
+            invalid_listings.append(listing_id)
 
     return invalid_listings
     # ==============================
@@ -418,22 +417,23 @@ class TestCases(unittest.TestCase):
             details_list.append(details[listing_id])
 
             # Spot-check 1: Listing 467507 has the correct policy number
-            self.assertEqual(details_list[0]["policy_number"], "STR-0005349",
-                            "Listing 467507 should have policy number 'STR-0005349'.")
-            self.assertEqual(details_list[0]['policy_number'], 'STR-005349', 'Liting 005349 is STR-0005349')
-            # Spot-check 2: Listing 1944564 has host type 'Superhost' and room type 'Entire Room'
-            index_1944564 = html_list.index("1944564")
-            self.assertEqual(details_list[index_1944564]["host_type"], "Superhost",
-                            "Listing 1944564 should have host type 'Superhost'.")
-            self.assertEqual(details_list[index_1944564]["room_type"], "Entire Room",
-                            "Listing 1944564 should have room type 'Entire Room'.")
+        self.assertEqual(details_list[0]["policy_number"], "STR-0005349",
+                        "Listing 467507 should have policy number 'STR-0005349'.")
+        self.assertEqual(details_list[0]['policy_number'], 'STR-0005349', 'Liting 0005349 is STR-0005349')
+        
+        # Spot-check 2: Listing 1944564 has host type 'Superhost' and room type 'Entire Room'
+        index_1944564 = html_list.index("1944564")
+        self.assertEqual(details_list[index_1944564]["host_type"], "Superhost",
+                        "Listing 1944564 should have host type 'Superhost'.")
+        self.assertEqual(details_list[index_1944564]["room_type"], "Entire Room",
+                        "Listing 1944564 should have room type 'Entire Room'.")
 
-            # Spot-check 3: Listing 1944564 has location rating 4.9
-            self.assertEqual(details_list[index_1944564]["location_rating"], 4.9,
-                            "Listing 1944564 should have location rating 4.9.")
-            print('hi')
-            print(details_list[0])
-            print('Hello')     
+        # Spot-check 3: Listing 1944564 has location rating 4.9
+        self.assertEqual(details_list[index_1944564]["location_rating"], 4.9,
+                        "Listing 1944564 should have location rating 4.9.")
+        
+       
+           
 
     def test_create_listing_database(self):
         

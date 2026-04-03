@@ -1,0 +1,19 @@
+I believe that the current system for regulating short-term rentals in San Francisco is not entirely adequate in ensuring full accountability. 
+This is because even though hosts are required to register 
+with the city’s planning office, and Airbnb is expected to display registration numbers, 
+this process relies strongly on self-reporting and voluntary platform enforcement. This lack of rigor in the
+ process can allow for non-compliant listings to operate undetected. An improvement that could make this more error
+proof would be a mandatory 
+verification by the platform before listing a property. This would make sure fewer people are able to go undetected
+ through the process and create responsibility on all parties involved to prevent harm.
+One important factor when considering the legality of web scraping is whether the 
+scraped data violates the terms of service or access restrictions of a website. Even if 
+the data is publicly available, it may not be legal to access and scrape it depending 
+on the company's site policy and governmental structures. This matters alot becuase 
+it shows the tension between public access to information and the legal rights of the 
+website owners, so scraping has to adhere to both legal policy and platform rules.
+Two guidelines I think are important to consider when deciding whether to do webscraping is:
+Avoid scraping personal data without explicit permission, as this could violate people's privacy.
+Look at any website information regarding whether they state their policies on taking data from their website. 
+A third one is transparent and being honest and transparent about your use of data scraping.
+
